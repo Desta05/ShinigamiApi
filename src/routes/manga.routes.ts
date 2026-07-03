@@ -30,6 +30,17 @@ router.get("/latest", mangaController.getLatestUpdates);
 router.get("/search", mangaController.searchManga);
 
 /**
+ * @route   GET /api/manga/filter
+ * @desc    Filter manga
+ * @query   genre - Genre
+ * @query   status - Status (e.g. ongoing, completed)
+ * @query   sort - Sort by (e.g. popular, latest)
+ * @query   page - Page number (default: 1)
+ * @access  Public
+ */
+router.get("/filter", mangaController.filterManga);
+
+/**
  * @route   GET /api/manga/:mangaId
  * @desc    Get manga details
  * @param   mangaId - Manga ID

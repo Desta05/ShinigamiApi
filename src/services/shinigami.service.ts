@@ -45,13 +45,14 @@ export class ShinigamiService {
 
   private getImageHeaders(): Record<string, string> {
     return {
-      Accept:
-        "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-      DNT: "1",
-      Referer: `${this.baseUrl}/`,
-      "Sec-Fetch-Dest": "empty",
-      "Sec-GPC": "1",
-      "X-Requested-With": this.randomString(Math.floor(Math.random() * 20) + 1),
+      "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.9,id;q=0.8",
+      "DNT": "1",
+      "Referer": `${this.baseUrl}/`,
+      "Sec-Fetch-Dest": "image",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Site": "cross-site",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     };
   }
 
@@ -180,6 +181,64 @@ export class ShinigamiService {
         );
       }
       throw new Error(`Failed to search manga: ${error.message}`);
+    }
+  }
+
+  async getMangaByFilter(
+    page: number = 1,
+    genre: string = "",
+    status: string = "",
+    sort: string = "latest"
+  ): Promise<MangaListResponse> {
+    try {
+      const params: any = {
+        page,
+        page_size: 30,
+        sort: sort === 'popular' ? 'popularity' : 'latest',
+      };
+
+      if (genre && genre.length > 0) {
+        params.genre = genre;
+      }
+      
+      if (status && status.length > 0) {
+        // Shinigami status map: 1 = Ongoing, 2 = Completed
+        if (status.toLowerCase() === 'ongoing') {
+          params.status = 1;
+        } else if (status.toLowerCase() === 'completed') {
+          params.status = 2;
+        }
+      }
+
+      const response = await this.client.get(`${this.apiUrl}/v1/manga/list`, {
+        params,
+      });
+
+      if (!response.data || !response.data.data) {
+        throw new Error("Invalid response from API");
+      }
+
+      const mangas: Manga[] = response.data.data.map((item: any) => ({
+        title: item.title || "Unknown",
+        thumbnail: item.cover_image_url || item.cover_portrait_url || "",
+        url: item.manga_id || "",
+        mangaUrl: `${this.baseUrl}/series/${item.manga_id}`,
+      }));
+
+      return {
+        mangas,
+        hasNextPage:
+          response.data.meta?.page < response.data.meta?.total_page || false,
+      };
+    } catch (error: any) {
+      if (error.response) {
+        throw new Error(
+          `Failed to filter manga: ${error.response.status} - ${
+            error.response.data?.message || error.message
+          }`
+        );
+      }
+      throw new Error(`Failed to filter manga: ${error.message}`);
     }
   }
 

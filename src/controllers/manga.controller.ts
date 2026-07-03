@@ -80,6 +80,30 @@ export class MangaController {
     }
   };
 
+  filterManga = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const genre = (req.query.genre as string) || "";
+      const status = (req.query.status as string) || "";
+      const sort = (req.query.sort as string) || "latest";
+
+      const result = await this.shinigamiService.getMangaByFilter(page, genre, status, sort);
+
+      const response: ApiResponse<typeof result> = {
+        success: true,
+        data: result,
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponse<null> = {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+      res.status(500).json(response);
+    }
+  };
+
   getMangaDetails = async (req: Request, res: Response): Promise<void> => {
     try {
       const { mangaId } = req.params;
